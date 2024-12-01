@@ -171,3 +171,61 @@ void placeShip(char grid[GRID_SIZE][GRID_SIZE], Ship *ship, int shipSize, const 
 
     printf("\n"); // Add extra newline for readability
 }
+// Function to display the grid with consideration of the tracking difficulty
+void displayGrid(char grid[GRID_SIZE][GRID_SIZE], int trackingDifficulty)
+{
+    printf("  A B C D E F G H I J\n"); // Column headers
+    for (int i = 0; i < GRID_SIZE; i++)
+    {
+        printf("%d ", i + 1); // Row numbers
+        for (int j = 0; j < GRID_SIZE; j++)
+        {
+            if (trackingDifficulty == 2) // Hard mode: only show hits
+            {
+                if (grid[i][j] == '*') // Show hits
+                    printf("* ");
+                else // Hide everything else as water
+                    printf("~ ");
+            }
+            else // Easy mode: show hits and misses
+            {
+                if (grid[i][j] == '*') // Show hits
+                    printf("* ");
+                else if (grid[i][j] == 'o') // Show misses
+                    printf("o ");
+                else // Show water as-is
+                    printf("~ ");
+            }
+        }
+        printf("\n");
+    }
+}
+
+// Function to randomly select the first player
+int chooseFirstPlayer()
+{
+    return rand() % 2; // Randomly returns 0 or 1
+}
+
+// Function to ask the player for the tracking difficulty
+int askForTrackingDifficulty()
+{
+    char input[INPUT_SIZE];
+  int difficulty;
+
+    while (1)
+    {
+        printf("Choose tracking difficulty: 1 for Easy, 2 for Hard: ");
+        fgets(input, sizeof(input), stdin);
+
+        // Check that only a single valid number (1 or 2) was entered and nothing else
+        if (sscanf(input, "%d", &difficulty) == 1 && (difficulty == 1 || difficulty == 2) && strlen(input) == 2)
+        {
+            return difficulty; // Valid difficulty, return it
+        }
+        else
+        {
+            printf("Invalid input. Please enter 1 for Easy or 2 for Hard.\n");
+        }
+    }
+}
