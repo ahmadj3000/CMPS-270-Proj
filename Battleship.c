@@ -284,3 +284,72 @@ void getFiringCoordinates(int *row, int *col)
 
     printf("\n"); // Add extra newline for readability
 }
+// Function to count the remaining parts of a ship on the grid
+int countShipParts(char grid[GRID_SIZE][GRID_SIZE], char shipMarker)
+{
+    int count = 0;
+    for (int i = 0; i < GRID_SIZE; i++)
+    {
+        for (int j = 0; j < GRID_SIZE; j++)
+        {
+            if (grid[i][j] == shipMarker)
+            {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+// Function to fire at a coordinate
+int fireAtCoordinate(char grid[GRID_SIZE][GRID_SIZE], int row, int col, Ship ships[NUM_SHIPS], int trackingDifficulty)
+{
+    if (grid[row][col] == 'S') // Ship hit
+    {
+        grid[row][col] = '*'; // Mark as hit
+
+        // If in Easy mode, show hit message
+        if (trackingDifficulty == 1)
+        {
+            printf("Hit!\n");
+        }
+
+        return 1; // Hit
+    }
+    else if (grid[row][col] == '~') // Miss
+    {
+        grid[row][col] = 'o'; // Mark as miss
+
+        // If in Easy mode, show miss message
+        if (trackingDifficulty == 1)
+        {
+            printf("Miss.\n");
+        }
+
+        return 0; // Miss
+    }
+    else
+    {
+        // Already fired at this location, no additional feedback needed
+        if (trackingDifficulty == 1)
+        {
+            printf("You've already fired here!\n");
+        }
+
+        return 0; // No hit
+    }
+}
+
+// Function to check if all ships are sunk
+int allShipsSunk(char grid[GRID_SIZE][GRID_SIZE])
+{
+    for (int i = 0; i < GRID_SIZE; i++)
+    {
+        for (int j = 0; j < GRID_SIZE; j++)
+        {
+            if (grid[i][j] == 'S')
+                return 0; // Still a ship remaining
+        }
+    }
+    return 1; // All ships are sunk
+}
