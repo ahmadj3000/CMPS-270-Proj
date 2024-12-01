@@ -229,3 +229,58 @@ int askForTrackingDifficulty()
         }
     }
 }
+// Function to initialize the grid with water '~'
+void initializeGrid(char grid[GRID_SIZE][GRID_SIZE])
+{
+    for (int i = 0; i < GRID_SIZE; i++)
+    {
+        for (int j = 0; j < GRID_SIZE; j++)
+        {
+            grid[i][j] = '~'; // Water representation
+        }
+    }
+}
+
+// Function to check if a ship is sunk
+int isShipSunk(char grid[GRID_SIZE][GRID_SIZE], Ship ship)
+{
+    for (int i = 0; i < ship.shipSize; i++)
+    {
+        int row = ship.coords[i][0];
+        int col = ship.coords[i][1];
+        if (grid[row][col] != '*') // If any part of the ship is not hit
+        {
+            return 0; // The ship is not yet sunk
+        }
+    }
+    // Inside the part where you detect ship sinking
+    return 1; // All parts of the ship are hit, so it's sunk
+}
+
+// Function to ask for firing coordinates, similar to ship placement
+void getFiringCoordinates(int *row, int *col)
+{
+    char input[INPUT_SIZE];
+    char colChar;
+
+    // Get single line input for firing coordinates (e.g., B1)
+    while (1)
+    {
+        printf("Enter coordinates to fire at (e.g., B1): ");
+        fgets(input, sizeof(input), stdin);
+
+        // Parse the input to get column and row
+        if (sscanf(input, " %c%d", &colChar, row) == 2 && isValidColumn(colChar) && *row >= 1 && *row <= 10)
+        {
+            *col = toupper(colChar) - 'A'; // Convert 'A'-'J' to 0-9
+            *row -= 1;                     // Adjust row to zero-index
+            break;                         // Valid input, exit loop
+        }
+        else
+        {
+            printf("Invalid input. Please enter in the format B1 or A6.\n");
+        }
+    }
+
+    printf("\n"); // Add extra newline for readability
+}
