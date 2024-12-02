@@ -497,3 +497,151 @@ void reduceSmokeDuration(int smokeDurationGrid[GRID_SIZE][GRID_SIZE])
         }
     }
 }
+// Move handler
+void performMove(
+    char grid[GRID_SIZE][GRID_SIZE],
+    Ship ships[NUM_SHIPS],
+    int *radarUses,
+    int *smokeScreenUses,
+    int mySmokeDurationGrid[GRID_SIZE][GRID_SIZE],
+    int opponentSmokeDurationGrid[GRID_SIZE][GRID_SIZE],
+    int trackingDifficulty,
+    int *sunkTotal,
+    int *artilleryLifetime,
+    int *torpedoLifetime)
+{
+    char move[INPUT_SIZE];
+    int row, col;
+    int validMove = 0; // Flag to check if a valid move was chosen
+
+    while (!validMove) // Loop until a valid move is chosen
+    {
+        printf("Choose your move (Fire, Radar, Smoke, Artillery, Torpedo): ");
+        fgets(move, sizeof(move), stdin);
+        move[strcspn(move, "\n")] = '\0';
+
+        // Convert move to uppercase for case insensitivity
+        for (int i = 0; move[i]; i++)
+        {
+            move[i] = toupper(move[i]);
+        }
+
+        if (strncmp(move, "FIRE", 4) == 0)
+        {
+            getFiringCoordinates(&row, &col);
+            fireAtCoordinate(grid, row, col, ships, trackingDifficulty);
+            validMove = 1; // Mark the move as valid
+        }
+        else if (strncmp(move, "RADAR", 5) == 0)
+        {
+            if (*radarUses > 0)
+            {
+                // Get the coordinates and perform the radar sweep
+                getFiringCoordinates(&row, &col);
+                radarSweep(grid, opponentSmokeDurationGrid, row, col); // Perform radar sweep
+                (*radarUses)--;                                        // Decrease the available radar uses for the current player
+                validMove = 1;                                         // Mark the move as valid
+            }
+            else
+            {
+                printf("No radar sweeps left!\n");
+            }
+        }
+        else if (strncmp(move, "SMOKE", 5) == 0)
+        {
+            if (*smokeScreenUses > 0)
+            {
+                // Get the coordinates and deploy the smoke screen
+                getFiringCoordinates(&row, &col);
+                smokeScreen(mySmokeDurationGrid, row, col); // Set the smoke duration
+                (*smokeScreenUses)--;                       // Decrease the available smoke screen uses for the current player
+                validMove = 1;                              // Mark the move as valid
+            }
+            else
+            {
+                printf("No smoke screens left!\n");
+            }
+        }
+        else if (strncmp(move, "ARTILLERY", 9) == 0 && *artilleryLifetime > 0)
+        {
+            getFiringCoordinates(&row, &col);
+            artilleryStrike(grid, row, col, trackingDifficulty);
+            printf("Artillery used successfully!\n");
+            *artilleryLifetime = 0; // Deactivate after use
+            validMove = 1;          // Mark the move as valid
+        }
+        else if (strncmp(move, "TORPEDO", 7) == 0 && *torpedoLifetime > 0 && *sunkTotal >= 3)
+        {
+            char choice;
+            int isValidInput = 0; // Flag to check if input is valid
+
+            // Loop until valid input for row (R) or column (C)
+            while (!isValidInput)
+            {
+                printf("Choose row (R) or column (C): ");
+                scanf(" %c", &choice);
+                choice = toupper(choice); // Make case insensitive
+
+                if (choice == 'R' || choice == 'C') // Check if input is 'R' or 'C'
+                {
+                    isValidInput = 1; // Valid input
+                }
+                else
+                {
+                    printf("Invalid choice. Please enter 'R' for row or 'C' for column.\n");
+                }
+            }
+
+            if (choice == 'R')
+            {
+                isValidInput = 0; // Reset flag for row validation
+                while (!isValidInput)
+                {
+                    printf("Enter row number (1-10): ");
+                    if (scanf("%d", &row) == 1 && row >= 1 && row <= 10) // Check if input is a valid number
+                    {
+                        isValidInput = 1; // Valid input
+                    }
+                    else
+                    {
+                        printf("Invalid row. Please enter a number between 1 and 10.\n");
+                        clearInputBuffer(); // Clear invalid input
+                    }
+                }
+                torpedoAttack(grid, 'R', row - 1, trackingDifficulty); // Perform row attack
+                printf("Torpedo used successfully on row %d!\n", row);
+                *torpedoLifetime = 0; // Deactivate after use
+                validMove = 1;        // Mark the move as valid
+            }
+            else if (choice == 'C')
+            {
+                isValidInput = 0; // Reset flag for column validation
+                char colChar;
+                while (!isValidInput)
+                {
+                    printf("Enter column letter (A-J): ");
+                    scanf(" %c", &colChar);
+                    colChar = toupper(colChar); // Convert to uppercase
+
+                    if (colChar >= 'A' && colChar <= 'J') // Check if input is a valid column letter
+                    {
+                        isValidInput = 1;                                            // Valid input
+                        torpedoAttack(grid, 'C', colChar - 'A', trackingDifficulty); // Perform column attack
+                        printf("Torpedo used successfully on column %c!\n", colChar);
+                        *torpedoLifetime = 0; // Deactivate after use
+                        validMove = 1;        // Mark the move as valid
+                    }
+                    else
+                    {
+                        printf("Invalid column. Please enter a letter between A and J.\n");
+                    }
+                }
+            }
+            clearInputBuffer(); // Clear the input buffer after scanf
+        }
+        else
+        {
+            printf("Invalid move! Please enter a valid move.\n");
+        }
+    }
+}
