@@ -737,3 +737,207 @@ void autoPlaceSingleShip(char grid[GRID_SIZE][GRID_SIZE], Ship *ship, int shipSi
         attempts++;
     }
 }
+// Refactored autoPlaceShips function
+void autoPlaceShips(char grid[GRID_SIZE][GRID_SIZE], Ship ships[NUM_SHIPS])
+{
+    int shipSizes[NUM_SHIPS] = {5, 4, 3, 2}; // Sizes of Carrier, Battleship, Destroyer, Submarine
+    const char *shipNames[NUM_SHIPS] = {"Carrier", "Battleship", "Destroyer", "Submarine"};
+
+    for (int i = 0; i < NUM_SHIPS; i++)
+    {
+        autoPlaceSingleShip(grid, &ships[i], shipSizes[i], shipNames[i]);
+    }
+
+    printf("Bot has successfully placed all ships.\n");
+}
+
+void botTurn(
+    char grid[GRID_SIZE][GRID_SIZE],
+    Ship ships[NUM_SHIPS],
+    int trackingDifficulty,
+    int *artilleryLifetime,
+    int *torpedoLifetime)
+{
+    // Static variables to track bot's state
+    static int lastHitRow = -1, lastHitCol = -1; // Track last hit for adjacent targeting
+    static int torpedoRow = -1, torpedoCol = -1; // Row and Column to perform torpedo attacks
+    static int torpedoState = 0;                 // 0 = no torpedo, 1 = column torpedo, 2 = row torpedo
+    static int torpedoTurns = 0;                 // Number of remaining torpedo turns
+
+    int row, col;
+    int hitFlag = 0;
+
+    // Check if Artillery is available
+    if (*artilleryLifetime == 1)
+    {
+        // Bot decides to use Artillery
+        printf("Bot is using Artillery!\n");
+        // Random coordinates for artillery (ensure they are within bounds)
+        row = rand() % (GRID_SIZE - 1);
+        col = rand() % (GRID_SIZE - 1);
+        artilleryStrike(grid, row, col, trackingDifficulty);
+        *artilleryLifetime = 0; // Deactivate after use
+        return;                 // Artillery used, end turn
+    }
+
+    // Check if Torpedo is available
+    if (*torpedoLifetime == 1)
+    {
+        // Bot decides to use Torpedo
+        printf("Bot is using Torpedo!\n");
+        // Randomly choose between row or column
+        if (rand() % 2 == 0)
+        {
+            row = rand() % GRID_SIZE;
+            torpedoAttack(grid, 'R', row, trackingDifficulty);
+        }
+        else
+        {
+            col = rand() % GRID_SIZE;
+            torpedoAttack(grid, 'C', col, trackingDifficulty);
+        }
+        *torpedoLifetime = 0; // Deactivate after use
+        return;               // Torpedo used, end turn
+    }
+
+    // Existing bot logic...
+
+    if (torpedoTurns > 0)
+    {
+        if (torpedoState == 0)
+        {
+            // Perform torpedo on column
+            printf("Bot is performing a torpedo attack on column %c.\n", torpedoCol + 'A');
+            hitFlag = torpedoAttack(grid, 'C', torpedoCol, trackingDifficulty);
+
+            if (hitFlag)
+            {
+                printf("Bot's torpedo column attack hit!\n");
+                // Reset torpedo state
+                torpedoState = 0;
+                torpedoTurns = 0;
+                torpedoRow = -1;
+                torpedoCol = -1;
+            }
+            else
+            {
+                // Proceed to next torpedo attack
+                torpedoState = 1;
+                torpedoTurns--;
+            }
+        }
+        else if (torpedoState == 1)
+        {
+            // Perform torpedo on row
+            printf("Bot is performing a torpedo attack on row %d.\n", torpedoRow + 1);
+            hitFlag = torpedoAttack(grid, 'R', torpedoRow, trackingDifficulty);
+
+            if (hitFlag)
+            {
+                printf("Bot's torpedo row attack hit!\n");
+                // Reset torpedo state
+                torpedoState = 0;
+                torpedoTurns = 0;
+                torpedoRow = -1;
+                torpedoCol = -1;
+            }
+            else
+            {
+                // Torpedo attacks completed
+                torpedoState = 0;
+                torpedoTurns--;
+            }
+        }
+    }
+    else
+    {
+        if (lastHitRow != -1 && lastHitCol != -1)
+        {
+            // After a hit, target adjacent cells
+            int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}; // Up, Down, Left, Right
+            int foundTarget = 0;
+
+            for (int i = 0; i < 4; i++)
+            {
+                int newRow = lastHitRow + directions[i][0];
+                int newCol = lastHitCol + directions[i][1];
+                if (newRow >= 0 && newRow < GRID_SIZE && newCol >= 0 && newCol < GRID_SIZE && grid[newRow][newCol] == 'S')
+                {
+                    row = newRow;
+                    col = newCol;
+                    foundTarget = 1;
+                    break;
+                }
+            }
+
+            if (foundTarget)
+            {
+                printf("Bot fires at %c%d\n", col + 'A', row + 1);
+                hitFlag = fireAtCoordinate(grid, row, col, ships, trackingDifficulty);
+
+                if (hitFlag)
+                {
+                    // Hit, set up torpedo attacks for next two turns
+                    torpedoRow = row;
+                    torpedoCol = col;
+                    torpedoState = 0; // Start with column torpedo
+                    torpedoTurns = 2;
+                    lastHitRow = row;
+                    lastHitCol = col;
+                }
+                else
+                {
+                    // Miss, do not change torpedo state
+                    lastHitRow = -1;
+                    lastHitCol = -1;
+                }
+            }
+            else
+            {
+                // No adjacent targets found, fire randomly
+                do
+                {
+                    row = rand() % GRID_SIZE;
+                    col = rand() % GRID_SIZE;
+                } while (grid[row][col] == '*' || grid[row][col] == 'o'); // Avoid repeated shots
+
+                printf("Bot fires at %c%d\n", col + 'A', row + 1);
+                hitFlag = fireAtCoordinate(grid, row, col, ships, trackingDifficulty);
+
+                if (hitFlag)
+                {
+                    // Hit, set up torpedo attacks for next two turns
+                    torpedoRow = row;
+                    torpedoCol = col;
+                    torpedoState = 0; // Start with column torpedo
+                    torpedoTurns = 2;
+                    lastHitRow = row;
+                    lastHitCol = col;
+                }
+            }
+        }
+        else
+        {
+            // Random targeting for the first hit
+            do
+            {
+                row = rand() % GRID_SIZE;
+                col = rand() % GRID_SIZE;
+            } while (grid[row][col] == '*' || grid[row][col] == 'o'); // Avoid repeated shots
+
+            printf("Bot fires at %c%d\n", col + 'A', row + 1);
+            hitFlag = fireAtCoordinate(grid, row, col, ships, trackingDifficulty);
+
+            if (hitFlag)
+            {
+                // Hit, set up torpedo attacks for next two turns
+                torpedoRow = row;
+                torpedoCol = col;
+                torpedoState = 0; // Start with column torpedo
+                torpedoTurns = 2;
+                lastHitRow = row;
+                lastHitCol = col;
+            }
+        }
+    }
+}
