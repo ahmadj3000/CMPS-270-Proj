@@ -941,3 +941,97 @@ void botTurn(
         }
     }
 }
+int main()
+{
+    srand(time(NULL)); // Seed the random number generator once at the start
+
+    int smokeScreenUsesP1 = 0, smokeScreenUsesP2 = 0;
+    int radarUsesP1 = 3, radarUsesP2 = 3;
+    int sunkTotalP1 = 0, sunkTotalP2 = 0;
+    int artilleryLifetimeP1 = 0, artilleryLifetimeP2 = 0;
+    int torpedoLifetimeP1 = 0, torpedoLifetimeP2 = 0;
+    int filledArtilleryP1_FLAG = 0, filledArtilleryP2_FLAG = 0;
+    int filledTorpedoP1_FLAG = 0, filledTorpedoP2_FLAG = 0;
+
+    // Create two grids for the two players
+    char player1Grid[GRID_SIZE][GRID_SIZE];
+    char player2Grid[GRID_SIZE][GRID_SIZE];
+
+    // Separate smoke grids for each player
+    int smokeDurationGridP1[GRID_SIZE][GRID_SIZE] = {0}; // Smoke duration grid for Player 1
+    int smokeDurationGridP2[GRID_SIZE][GRID_SIZE] = {0}; // Smoke duration grid for Player 2
+
+    // Initialize both grids with water
+    initializeGrid(player1Grid);
+    initializeGrid(player2Grid);
+
+    // Ask for game mode
+    int gameMode;
+    printf("Choose game mode: 1 for Player vs. Player, 2 for Player vs. Bot: ");
+    scanf("%d", &gameMode);
+    clearInputBuffer(); // Clear input buffer
+
+    // Ask for player name(s)
+    char player1Name[NAME_SIZE], player2Name[NAME_SIZE];
+    printf("Enter Player 1's name: ");
+    fgets(player1Name, sizeof(player1Name), stdin);
+    player1Name[strcspn(player1Name, "\n")] = '\0'; // Remove newline character
+
+ if (gameMode == 1)
+    {
+        // For PvP, ask for Player 2's name
+        printf("Enter Player 2's name: ");
+        fgets(player2Name, sizeof(player2Name), stdin);
+        player2Name[strcspn(player2Name, "\n")] = '\0'; // Remove newline character
+    }
+    else
+    {
+        // For PvB, set the bot's name
+        strcpy(player2Name, "Bot");
+    }
+
+    // Ask for tracking difficulty
+    int trackingDifficulty = askForTrackingDifficulty();
+
+    // Player 1 places ships
+    printf("%s, place your ships.\n", player1Name);
+    placeShip(player1Grid, &player1Ships[0], 5, "Carrier");
+    placeShip(player1Grid, &player1Ships[1], 4, "Battleship");
+    placeShip(player1Grid, &player1Ships[2], 3, "Destroyer");
+    placeShip(player1Grid, &player1Ships[3], 2, "Submarine");
+    clearScreen(); // Clear the screen after Player 1 finishes placing ships
+
+    if (gameMode == 1)
+    {
+        // Player 2 places ships in PvP mode
+        printf("%s, place your ships.\n", player2Name);
+        placeShip(player2Grid, &player2Ships[0], 5, "Carrier");
+        placeShip(player2Grid, &player2Ships[1], 4, "Battleship");
+        placeShip(player2Grid, &player2Ships[2], 3, "Destroyer");
+        placeShip(player2Grid, &player2Ships[3], 2, "Submarine");
+    }
+    else
+     {
+        // Bot places ships in PvB mode
+        printf("Bot is placing ships...\n");
+        autoPlaceShips(player2Grid, player2Ships); // Correctly use autoPlaceShips
+#ifdef _WIN32
+        Sleep(3000); // Wait for 3 seconds (Windows)
+#else
+        sleep(3); // Wait for 3 seconds (Unix/Linux/macOS)
+#endif
+    }
+    clearScreen(); // Clear the screen after Player 2 (or Bot) finishes placing ships
+
+    // Randomly select the first player
+    int currentPlayer = chooseFirstPlayer();
+    printf("%s goes first!\n", currentPlayer == 0 ? player1Name : player2Name);
+ 
+
+// game loop for anthony
+
+
+    return 0;
+}
+        
+        
