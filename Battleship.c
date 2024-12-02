@@ -353,3 +353,96 @@ int allShipsSunk(char grid[GRID_SIZE][GRID_SIZE])
     }
     return 1; // All ships are sunk
 }
+// Function to switch between players
+int switchPlayer(int currentPlayer)
+{
+    return currentPlayer == 0 ? 1 : 0;
+}
+
+// Perform artillery strike (hits a 2x2 area)
+void artilleryStrike(char grid[GRID_SIZE][GRID_SIZE], int row, int col, int trackingDifficulty)
+{
+    printf("Firing artillery at area %c%d to %c%d\n", col + 'A', row + 1, col + 'A' + 1, row + 2);
+
+    for (int i = row; i < row + 2 && i < GRID_SIZE; i++)
+    {
+        for (int j = col; j < col + 2 && j < GRID_SIZE; j++)
+        {
+            if (grid[i][j] == 'S')
+            {
+                printf("Hit at %c%d!\n", j + 'A', i + 1);
+                grid[i][j] = '*';
+            }
+            else
+            {
+                if (trackingDifficulty == 1) // Easy Mode
+                {
+                    printf("Miss at %c%d.\n", j + 'A', i + 1);
+                    grid[i][j] = 'o'; // Mark miss
+                }
+                else // Hard Mode
+                {
+                    printf("Miss at %c%d.\n", j + 'A', i + 1);
+                    // Optionally, you can choose not to mark misses in Hard Mode
+                }
+            }
+        }
+    }
+}
+
+// Function to perform Torpedo attack
+int torpedoAttack(char grid[GRID_SIZE][GRID_SIZE], char choice, int num, int trackingDifficulty)
+{
+    int hit = 0;
+
+    if (choice == 'R')
+    { // Row attack
+        printf("Firing torpedo at row %d\n", num + 1);
+        for (int j = 0; j < GRID_SIZE; j++)
+        {
+            if (grid[num][j] == 'S')
+            {
+                grid[num][j] = '*'; // Mark hit
+                hit = 1;
+                if (trackingDifficulty == 1) // Only print in easy mode
+                {
+                    printf("Hit at %c%d!\n", j + 'A', num + 1);
+                }
+            }
+            else
+            {
+                if (trackingDifficulty == 1) // Only print and mark miss in easy mode
+                {
+                    printf("Miss at %c%d.\n", j + 'A', num + 1);
+                    grid[num][j] = 'o'; // Mark miss
+                }
+            }
+        }
+    }
+    else if (choice == 'C')
+    { // Column attack
+        printf("Firing torpedo at column %c\n", num + 'A');
+        for (int i = 0; i < GRID_SIZE; i++)
+        {
+            if (grid[i][num] == 'S')
+            {
+                grid[i][num] = '*'; // Mark hit
+                hit = 1;
+                if (trackingDifficulty == 1) // Only print in easy mode
+                {
+                    printf("Hit at %c%d!\n", num + 'A', i + 1);
+                }
+            }
+            else
+            {
+                if (trackingDifficulty == 1) // Only print and mark miss in easy mode
+                {
+                    printf("Miss at %c%d.\n", num + 'A', i + 1);
+                    grid[i][num] = 'o'; // Mark miss
+                }
+            }
+        }
+    }
+
+    return hit;
+}
