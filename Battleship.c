@@ -941,7 +941,7 @@ void botTurn(
         }
     }
 }
-int main()
+nt main()
 {
     srand(time(NULL)); // Seed the random number generator once at the start
 
@@ -977,7 +977,7 @@ int main()
     fgets(player1Name, sizeof(player1Name), stdin);
     player1Name[strcspn(player1Name, "\n")] = '\0'; // Remove newline character
 
- if (gameMode == 1)
+    if (gameMode == 1)
     {
         // For PvP, ask for Player 2's name
         printf("Enter Player 2's name: ");
@@ -1011,7 +1011,7 @@ int main()
         placeShip(player2Grid, &player2Ships[3], 2, "Submarine");
     }
     else
-     {
+    {
         // Bot places ships in PvB mode
         printf("Bot is placing ships...\n");
         autoPlaceShips(player2Grid, player2Ships); // Correctly use autoPlaceShips
@@ -1026,12 +1026,129 @@ int main()
     // Randomly select the first player
     int currentPlayer = chooseFirstPlayer();
     printf("%s goes first!\n", currentPlayer == 0 ? player1Name : player2Name);
- 
 
-// game loop for anthony
+    while (1)
+    {
+        // Determine current and opponent player details
+        char *currentPlayerName = currentPlayer == 0 ? player1Name : player2Name;
+        char *opponentPlayerName = currentPlayer == 0 ? player2Name : player1Name;
+        char(*opponentGrid)[GRID_SIZE] = currentPlayer == 0 ? player2Grid : player1Grid;
+        Ship *opponentShips = currentPlayer == 0 ? player2Ships : player1Ships;
 
+        // Use the correct smokeScreenUses and radarUses for the current player
+        int *smokeScreenUses = currentPlayer == 0 ? &smokeScreenUsesP1 : &smokeScreenUsesP2;
+        int *radarUses = currentPlayer == 0 ? &radarUsesP1 : &radarUsesP2;
+        int *sunkTotal = currentPlayer == 0 ? &sunkTotalP1 : &sunkTotalP2;
+        int *artilleryLifetime = currentPlayer == 0 ? &artilleryLifetimeP1 : &artilleryLifetimeP2;
+        int *torpedoLifetime = currentPlayer == 0 ? &torpedoLifetimeP1 : &torpedoLifetimeP2;
 
-    return 0;
+        // Decrement lifetime variables at the start of the turn
+        if (currentPlayer == 0)
+        {
+            if (*artilleryLifetime > 0)
+                (*artilleryLifetime)--;
+            if (*torpedoLifetime > 0)
+                (*torpedoLifetime)--;
+        }
+        else
+        {
+            if (*artilleryLifetime > 0)
+                (*artilleryLifetime)--;
+            if (*torpedoLifetime > 0)
+                (*torpedoLifetime)--;
+        }
+
+        // Reduce smoke duration at the start of the player's turn
+        reduceSmokeDuration(currentPlayer == 0 ? smokeDurationGridP1 : smokeDurationGridP2);
+
+        // Player or bot's turn
+        if (gameMode == 2 && currentPlayer == 1)
+        {
+            // Bot's turn
+            printf("Bot's turn!\n");
+            botTurn(player1Grid, player1Ships, trackingDifficulty, artilleryLifetime, torpedoLifetime);
+        }
+        else
+        {
+            // Player's turn
+            printf("%s's turn!\n", currentPlayerName);
+            displayGrid(opponentGrid, trackingDifficulty);
+            performMove(
+                opponentGrid,
+                opponentShips,
+                radarUses,
+                smokeScreenUses,
+                currentPlayer == 0 ? smokeDurationGridP1 : smokeDurationGridP2,
+                currentPlayer == 0 ? smokeDurationGridP2 : smokeDurationGridP1,
+                trackingDifficulty,
+                sunkTotal,
+                artilleryLifetime,
+                torpedoLifetime);
+        }
+
+        // Check if any ships have been sunk
+        for (int i = 0; i < NUM_SHIPS; i++)
+        {
+            if (opponentShips[i].sunk == 1 && isShipSunk(opponentGrid, opponentShips[i]))
+            {
+                printf("You sunk the %s!\n", opponentShips[i].name);
+                opponentShips[i].sunk = 0; // Mark the ship as sunk to prevent repeated messages
+                (*smokeScreenUses)++;      // Award extra smoke use
+                (*sunkTotal)++;
+            }
+        }
+
+        // Unlock special moves based on sunkTotal
+        if (currentPlayer == 0)
+        {
+            if (*sunkTotal == 1 && artilleryLifetimeP1 == 0 && !filledArtilleryP1_FLAG)
+            {
+                artilleryLifetimeP1 = 2;
+                filledArtilleryP1_FLAG = 1;
+                printf("%s has unlocked Artillery! You have one turn to use it.\n", currentPlayerName);
+            }
+            if (*sunkTotal == 3 && torpedoLifetimeP1 == 0)
+            {
+                torpedoLifetimeP1 = 2;
+                filledTorpedoP1_FLAG = 1;
+
+                printf("%s has unlocked Torpedo! You have one turn to use it.\n", currentPlayerName);
+            }
+        }
+        else
+        {
+            if (*sunkTotal == 1 && artilleryLifetimeP2 == 0)
+            {
+                artilleryLifetimeP2 = 2;
+                filledArtilleryP2_FLAG = 1;
+                printf("%s has unlocked Artillery! You have one turn to use it.\n", currentPlayerName);
+            }
+            if (*sunkTotal == 3 && torpedoLifetimeP2 == 0)
+            {
+                torpedoLifetimeP2 = 2;
+                filledTorpedoP2_FLAG = 1;
+                printf("%s has unlocked Torpedo! You have one turn to use it.\n", currentPlayerName);
+            }
+        }
+
+        // Check if all of the opponent's ships have been sunk
+        if (allShipsSunk(opponentGrid))
+        {
+            printf("%s wins! All enemy ships have been sunk!\n", currentPlayerName);
+            break;
+        }
+
+        // Switch players and pause before the next turn
+        printf("Switching turns...\n");
+#ifdef _WIN32
+        Sleep(3000); // Wait for 3 seconds (Windows)
+#else
+        sleep(3); // Wait for 3 seconds (Unix/Linux/macOS)
+#endif
+
+        currentPlayer = switchPlayer(currentPlayer);
+        clearScreen(); // Clear the screen between player turns
+    }
+
+    return 0;
 }
-        
-        
