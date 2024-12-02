@@ -446,3 +446,54 @@ int torpedoAttack(char grid[GRID_SIZE][GRID_SIZE], char choice, int num, int tra
 
     return hit;
 }
+void radarSweep(char grid[GRID_SIZE][GRID_SIZE], int smokeGrid[GRID_SIZE][GRID_SIZE], int row, int col)
+{
+    printf("Performing radar sweep on area %c%d to %c%d\n", col + 'A', row + 1, col + 'A' + 1, row + 2);
+    int foundShip = 0;
+
+    for (int i = row; i < row + 2 && i < GRID_SIZE; i++)
+    {
+        for (int j = col; j < col + 2 && j < GRID_SIZE; j++)
+        {
+            if (smokeGrid[i][j] == 0 && grid[i][j] == 'S') // Skip cells that are under smoke
+            {
+                foundShip = 1;
+            }
+        }
+    }
+
+    if (foundShip)
+    {
+        printf("Enemy ships found in the area.\n");
+    }
+    else
+    {
+        printf("No enemy ships found in the area.\n");
+    }
+}
+
+void smokeScreen(int smokeDurationGrid[GRID_SIZE][GRID_SIZE], int row, int col)
+{
+    printf("Deploying smoke screen on area %c%d to %c%d\n", col + 'A', row + 1, col + 'A' + 1, row + 2);
+    for (int i = row; i < row + 2 && i < GRID_SIZE; i++)
+ {
+        for (int j = col; j < col + 2 && j < GRID_SIZE; j++)
+        {
+            smokeDurationGrid[i][j] = 1; // Set smoke duration for 1 round
+        }
+    }
+}
+
+void reduceSmokeDuration(int smokeDurationGrid[GRID_SIZE][GRID_SIZE])
+{
+    for (int i = 0; i < GRID_SIZE; i++)
+    {
+        for (int j = 0; j < GRID_SIZE; j++)
+        {
+            if (smokeDurationGrid[i][j] > 0) // If smoke is active
+            {
+                smokeDurationGrid[i][j]--; // Decrease duration
+            }
+        }
+    }
+}
