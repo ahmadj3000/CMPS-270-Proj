@@ -645,3 +645,95 @@ void performMove(
         }
     }
 }
+int isAdjacent(char grid[GRID_SIZE][GRID_SIZE], int row, int col, int shipSize, char orientation)
+{
+    int directions[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+
+    if (orientation == 'H')
+    {
+        for (int i = 0; i < shipSize; i++)
+        {
+            int r = row;
+            int c = col + i;
+            for (int d = 0; d < 8; d++)
+            {
+                int adjR = r + directions[d][0];
+                int adjC = c + directions[d][1];
+                if (adjR >= 0 && adjR < GRID_SIZE && adjC >= 0 && adjC < GRID_SIZE && grid[adjR][adjC] == 'S')
+                {
+                    return 1; // Adjacent to another ship
+                }
+            }
+        }
+    }
+    else if (orientation == 'V')
+    {
+        for (int i = 0; i < shipSize; i++)
+        {
+            int r = row + i;
+            int c = col;
+            for (int d = 0; d < 8; d++)
+            {
+                int adjR = r + directions[d][0];
+                int adjC = c + directions[d][1];
+                if (adjR >= 0 && adjR < GRID_SIZE && adjC >= 0 && adjC < GRID_SIZE && grid[adjR][adjC] == 'S')
+                {
+                    return 1; // Adjacent to another ship
+                }
+            }
+        }
+    }
+
+    return 0; // No adjacent ships
+}
+
+// Helper function to place a single ship automatically
+void autoPlaceSingleShip(char grid[GRID_SIZE][GRID_SIZE], Ship *ship, int shipSize, const char *shipName)
+{
+    int valid = 0, attempts = 0;
+    while (!valid)
+    {
+        if (attempts > 100)
+        { // Safeguard: if too many attempts, reset grid
+            printf("Too many attempts to place ships. Restarting bot placement...\n");
+            initializeGrid(grid); // Reset grid
+            attempts = 0;         // Reset attempts
+        }
+
+        int row = rand() % GRID_SIZE;
+        int col = rand() % GRID_SIZE;
+        char orientation = (rand() % 2 == 0) ? 'H' : 'V'; // Randomize orientation
+
+        if (isValidPlacement(grid, row, col, shipSize, orientation) &&
+            !isAdjacent(grid, row, col, shipSize, orientation))
+        {
+            // Place the ship on the grid
+            if (orientation == 'H')
+            {
+                for (int i = 0; i < shipSize; i++)
+                {
+                    grid[row][col + i] = 'S';     // Mark ship on grid horizontally
+                    ship->coords[i][0] = row;     // Store row coordinate
+                    ship->coords[i][1] = col + i; // Store column coordinate
+                }
+            }
+            else // 'V'
+            {
+                for (int i = 0; i < shipSize; i++)
+                {
+                    grid[row + i][col] = 'S';     // Mark ship on grid vertically
+                    ship->coords[i][0] = row + i; // Store row coordinate
+                    ship->coords[i][1] = col;     // Store column coordinate
+                }
+            }
+
+            // Initialize ship properties
+            ship->shipSize = shipSize;
+            strcpy(ship->name, shipName);
+            ship->sunk = 1; // Initialize the sunk flag to 1 (not sunk)
+
+            valid = 1; // Ship placed successfully
+        }
+        attempts++;
+    }
+}
